@@ -2,6 +2,11 @@ import { useRef, useState } from "react";
 import { BG_URL } from "../utils/constants";
 import Header from "./Header";
 import { checkValidatData } from "../utils/validate";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { auth } from "../utils/firebase";
 
 const Login = () => {
   const [isSignInForm, setIsSignInForm] = useState(true);
@@ -16,10 +21,46 @@ const Login = () => {
 
   const handleButtonClick = () => {
     // form validation
-    const message = checkValidatData(email.current.value, password.current.value);
+    const message = checkValidatData(
+      email.current.value,
+      password.current.value
+    );
     setErrorMessage(message);
 
     // Sign In/sign up
+    if (errorMessage) return;
+
+    if (!isSignInForm) {
+      createUserWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed up
+          const user = userCredential.user;
+          console.log(user);
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          setErrorMessage(errorCode + " - " + errorMessage);
+        });
+    } else {
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+          console.log("Sign In Complete", user);
+          // ...
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          setErrorMessage(errorCode + " - " + errorMessage);
+
+        });
+    }
   };
 
   return (
