@@ -1,138 +1,131 @@
-import { useRef, useState } from "react";
-import { BG_URL } from "../utils/constants";
+import React, { useRef, useState } from "react";
 import Header from "./Header";
-import { checkValidatData } from "../utils/validate";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
+import { checkValidData } from "../utils/validate";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../utils/firebase";
+import { useDispatch } from "react-redux";
+import { userSignIn } from "../utils/userSlice";
+import { BG_URL } from "../utils/constants";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [isSignInForm, setIsSignInForm] = useState(true);
-  const [errorMessage, setErrorMessage] = useState();
-  const email = useRef(null);
-  const name = useRef(null);
-  const password = useRef(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const toogleSignInForm = () => {
+  const email = useRef(null);
+  const password = useRef(null);
+  const name = useRef(null);
+
+  const toggleSignInForm = () => {
     setIsSignInForm(!isSignInForm);
+    setErrorMessage(null);
   };
 
   const handleButtonClick = () => {
-    // form validation
-    const message = checkValidatData(
-      email.current.value,
-      password.current.value
-    );
+    const message = checkValidData(email.current.value, password.current.value);
     setErrorMessage(message);
-
-    // Sign In/sign up
-    if (errorMessage) return;
+    if (message) return;
 
     if (!isSignInForm) {
-      createUserWithEmailAndPassword(
-        auth,
-        email.current.value,
-        password.current.value
-      )
-        .then((userCredential) => {
-          // Signed up
-          const user = userCredential.user;
-          console.log(user);
-          alert("User Registered Successfully");
-          setIsSignInForm(false);
+      createUserWithEmailAndPassword(auth, email.current.value, password.current.value)
+        .then(async () => {
+          await updateProfile(auth.currentUser, {
+            displayName: name.current.value,
+            photoURL: "https://avatars.githubusercontent.com/u/151706966" ,
+          });
+          await auth.currentUser.reload();
+          const user = auth.currentUser;
+
+          dispatch(userSignIn({
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+          }));
+
+          navigate("/browse");
         })
         .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          setErrorMessage(errorCode + " - " + errorMessage);
+          setErrorMessage(error.code + " - " + error.message);
         });
     } else {
-      signInWithEmailAndPassword(
-        auth,
-        email.current.value,
-        password.current.value
-      )
-        .then((userCredential) => {
-          // Signed in
-          const user = userCredential.user;
-          console.log("Sign In Complete", user);
+      signInWithEmailAndPassword(auth, email.current.value, password.current.value)
+        .then(async () => {
+          await auth.currentUser.reload();
+          const user = auth.currentUser;
+
+          dispatch(userSignIn({
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+          }));
+
+          navigate("/browse");
         })
         .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          setErrorMessage(errorCode + " - " + errorMessage);
+          setErrorMessage(error.code + " - " + error.message);
         });
     }
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
+    <div className="relative h-screen w-screen">
       <Header />
-
-      {/* Background Image */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={BG_URL}
-          alt="background"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black opacity-50" />
+        <img src={BG_URL} alt="background" className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-black opacity-60" />
       </div>
 
-      {/* Overlay Form */}
-      <div className="absolute inset-0 flex justify-center items-center z-10">
-        <form
-          onSubmit={(e) => e.preventDefault()}
-          className="bg-black bg-opacity-50 p-10 md:p-12 w-80 md:w-96 rounded-lg text-white"
-        >
-          <h1 className="font-bold text-3xl mb-6">
-            {isSignInForm ? "Sign In" : "Sign Up"}
-          </h1>
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-black bg-opacity-80 p-10 rounded-lg text-white"
+      >
+        <h1 className="text-3xl font-bold mb-6">{isSignInForm ? "Sign In" : "Sign Up"}</h1>
 
-          {!isSignInForm && (
-            <input
-              type="text"
-              ref={name}
-              placeholder="Full Name"
-              className="p-3 mb-4 w-full bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-          )}
-
+        {!isSignInForm && (
           <input
             type="text"
-            ref={email}
-            placeholder="Email or mobile number"
-            className="p-3 mb-4 w-full bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+            ref={name}
+            placeholder="Full Name"
+            className="w-full p-3 mb-4 rounded-md bg-gray-800 focus:outline-none"
           />
+        )}
 
-          <input
-            type="password"
-            ref={password}
-            placeholder="Password"
-            className="p-3 mb-4 w-full bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-          />
-          <p className="text-red-500 font-bold text-lg pb-2">{errorMessage}</p>
+        <input
+          type="email"
+          ref={email}
+          placeholder="Email"
+          className="w-full p-3 mb-4 rounded-md bg-gray-800 focus:outline-none"
+        />
 
-          <button
-            type="submit"
-            className="p-3 mb-4 w-full bg-red-600 hover:bg-red-700 rounded-md font-semibold"
-            onClick={handleButtonClick}
-          >
-            {isSignInForm ? "Sign In" : "Sign Up"}
-          </button>
+        <input
+          type="password"
+          ref={password}
+          placeholder="Password"
+          className="w-full p-3 mb-4 rounded-md bg-gray-800 focus:outline-none"
+        />
 
-          <p
-            className="text-sm text-gray-400 cursor-pointer"
-            onClick={toogleSignInForm}
-          >
-            {isSignInForm
-              ? " New to Netflix? Sign up Now"
-              : "Already registered? sign Up Now..."}
-          </p>
-        </form>
-      </div>
+        {errorMessage && (
+          <p className="text-red-500 font-bold text-sm mb-4">{errorMessage}</p>
+        )}
+
+        <button
+          onClick={handleButtonClick}
+          className="w-full bg-red-600 hover:bg-red-700 p-3 rounded-md font-semibold"
+        >
+          {isSignInForm ? "Sign In" : "Sign Up"}
+        </button>
+
+        <p
+          className="mt-4 text-sm text-gray-300 hover:underline cursor-pointer"
+          onClick={toggleSignInForm}
+        >
+          {isSignInForm
+            ? "New to Netflix? Sign up now"
+            : "Already a user? Sign in here"}
+        </p>
+      </form>
     </div>
   );
 };
