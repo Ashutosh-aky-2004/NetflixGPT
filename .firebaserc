@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "language-exchange-537c0"
-  }
+    "default": "netflixgpt-9299b"
+  },
+  "targets": {},
+  "etags": {}
 }
