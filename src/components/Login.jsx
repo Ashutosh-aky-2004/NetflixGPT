@@ -40,6 +40,8 @@ const Login = () => {
           // Signed up
           const user = userCredential.user;
           console.log(user);
+          alert("User Registered Successfully");
+          setIsSignInForm(false);
         })
         .catch((error) => {
           const errorCode = error.code;
@@ -47,18 +49,20 @@ const Login = () => {
           setErrorMessage(errorCode + " - " + errorMessage);
         });
     } else {
-      signInWithEmailAndPassword(auth, email, password)
+      signInWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
         .then((userCredential) => {
           // Signed in
           const user = userCredential.user;
           console.log("Sign In Complete", user);
-          // ...
         })
         .catch((error) => {
           const errorCode = error.code;
           const errorMessage = error.message;
           setErrorMessage(errorCode + " - " + errorMessage);
-
         });
     }
   };
