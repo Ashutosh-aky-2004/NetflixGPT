@@ -5,7 +5,7 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfi
 import { auth } from "../utils/firebase";
 import { useDispatch } from "react-redux";
 import { userSignIn } from "../utils/userSlice";
-import { BG_URL } from "../utils/constants";
+import { BG_URL, USER_AVATAR } from "../utils/constants";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
@@ -33,7 +33,7 @@ const Login = () => {
         .then(async () => {
           await updateProfile(auth.currentUser, {
             displayName: name.current.value,
-            photoURL: "https://avatars.githubusercontent.com/u/151706966" ,
+            photoURL: USER_AVATAR ,
           });
           await auth.currentUser.reload();
           const user = auth.currentUser;
